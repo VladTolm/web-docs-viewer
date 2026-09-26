@@ -129,25 +129,31 @@ dropZone.addEventListener('drop', event => {
 // Viewer lifecycle -> status + log.
 viewer.addEventListener('viewer-state-change', event => {
   const { state, event: viewerEvent } = (event as CustomEvent<{ state: ViewerState; event?: ViewerEvent }>).detail
-  if (!viewerEvent) return
+  // The element mounts an empty placeholder before the first file is chosen; ignore that noise.
+  if (!viewerEvent || !current) return
 
   const lifecycle = state.lifecycle
-  const name = lifecycle?.filename ?? current?.name ?? ''
-  const type = lifecycle?.type ? `.${lifecycle.type}` : ''
+  const name = lifecycle?.filename ?? current.name
+  const ext = (lifecycle?.type ?? name.split('.').pop() ?? '').toUpperCase()
 
   switch (viewerEvent.type) {
     case 'load-start':
-      appendLog(`load-start ${name}${type}`)
+      appendLog(`load-start ${name}`)
       break
     case 'load-complete': {
       const elapsed = Math.round(performance.now() - loadStartedAt)
       const inner = lifecycle?.duration != null ? `, рендер ${Math.round(lifecycle.duration)} мс` : ''
-      setStatus('ready', `${name} · ${type.slice(1).toUpperCase()} · открыт за ${elapsed} мс`)
-      appendLog(`load-complete ${name}${type} · ${elapsed} мс${inner}`, 'ok')
+      const renderer = state.viewState?.renderer ? `, рендерер ${state.viewState.renderer}` : ''
+      setStatus('ready', `${name} · ${ext} · открыт за ${elapsed} мс`)
+      appendLog(`load-complete ${name} · ${elapsed} мс${inner}${renderer}`, 'ok')
       break
     }
+    // Frequent UI chatter that is not useful for format evaluation.
     case 'unload-start':
     case 'unload-complete':
+    case 'zoom-change':
+    case 'view-state-change':
+    case 'operation-availability-change':
       break
     default:
       appendLog(`${viewerEvent.type} ${JSON.stringify(viewerEvent.payload ?? null).slice(0, 200)}`)
@@ -155,6 +161,7 @@ viewer.addEventListener('viewer-state-change', event => {
 })
 
 viewer.addEventListener('viewer-error', event => {
+  if (!current) return
   const { error } = (event as CustomEvent<{ error: unknown }>).detail
   const message = describeError(error)
   setStatus('error', `Ошибка: ${message}`)
