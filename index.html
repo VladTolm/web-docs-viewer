@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Просмотр документов</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="bar">
+        <div class="bar-left">
+          <span class="logo">📄</span>
+          <div class="bar-title">
+            <strong>Просмотр документов</strong>
+            <span class="muted">file-viewer 3.1.2 · рендер в браузере, файл никуда не отправляется</span>
+          </div>
+        </div>
+        <div class="bar-right">
+          <label class="btn btn-primary" for="file-input">Выбрать файл</label>
+          <input id="file-input" type="file" hidden />
+          <button class="btn" id="btn-reload" type="button" disabled>Перезагрузить</button>
+          <button class="btn" id="btn-clear" type="button" disabled>Очистить</button>
+        </div>
+      </header>
+
+      <div class="status" id="status">
+        <span class="status-dot" id="status-dot" aria-hidden="true"></span>
+        <span id="status-text">Файл не выбран. Нажмите «Выбрать файл» или перетащите документ в окно.</span>
+      </div>
+
+      <main class="viewer-wrap" id="drop-zone">
+        <div class="placeholder" id="placeholder">
+          <div class="placeholder-icon">⬇</div>
+          <p><strong>Перетащите файл сюда</strong> или выберите через кнопку</p>
+          <p class="muted">PDF · DOCX · DOC · XLSX · XLS · CSV · PPTX · PPT · RTF · ODT · ODS · ODP · ZIP · RAR · 7Z · EML · MSG · MD · TXT · JSON · изображения · видео · аудио · DWG · DXF · GLB · STL и ещё 200 форматов</p>
+        </div>
+        <flyfish-file-viewer id="viewer" class="viewer" hidden></flyfish-file-viewer>
+      </main>
+
+      <footer class="log-wrap">
+        <div class="log-head">
+          <span>Журнал событий</span>
+          <button class="btn btn-small" id="btn-log-clear" type="button">Очистить журнал</button>
+        </div>
+        <pre class="log" id="log"></pre>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

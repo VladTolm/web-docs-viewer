@@ -1,0 +1,4 @@
+node_modules
+dist
+public/file-viewer
+.DS_Store
