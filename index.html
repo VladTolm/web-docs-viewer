@@ -21,8 +21,64 @@
           <input id="file-input" type="file" hidden />
           <button class="btn" id="btn-reload" type="button" disabled>Перезагрузить</button>
           <button class="btn" id="btn-clear" type="button" disabled>Очистить</button>
+          <button class="btn" id="btn-settings" type="button" aria-expanded="false" aria-controls="settings">Настройки</button>
         </div>
       </header>
+
+      <aside class="settings" id="settings" hidden>
+        <div class="settings-head">
+          <strong>Что показывать</strong>
+          <div class="settings-actions">
+            <button class="btn btn-small" id="btn-settings-reset" type="button">Сбросить</button>
+            <button class="btn btn-small" id="btn-settings-close" type="button" aria-label="Закрыть">✕</button>
+          </div>
+        </div>
+        <div class="settings-body">
+          <fieldset>
+            <legend>Страница</legend>
+            <label><input type="checkbox" data-key="page.status" /> Строка статуса</label>
+            <label><input type="checkbox" data-key="page.placeholder" /> Подсказка в пустой области</label>
+            <label><input type="checkbox" data-key="page.log" /> Журнал событий</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Панель просмотрщика</legend>
+            <label><input type="checkbox" data-key="viewer.toolbar" /> Панель инструментов</label>
+            <div class="sub" data-sub-of="viewer.toolbar">
+              <label><input type="checkbox" data-key="viewer.zoom" /> Масштаб</label>
+              <label><input type="checkbox" data-key="viewer.search" /> Поиск по документу</label>
+              <label><input type="checkbox" data-key="viewer.download" /> Скачать</label>
+              <label><input type="checkbox" data-key="viewer.print" /> Печать</label>
+              <label><input type="checkbox" data-key="viewer.exportHtml" /> Экспорт в HTML</label>
+              <label><input type="checkbox" data-key="viewer.theme" /> Переключатель темы</label>
+            </div>
+            <label><input type="checkbox" data-key="viewer.compact" /> Компактные отступы</label>
+            <label><input type="checkbox" data-key="viewer.watermark" /> Водяной знак</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>PDF</legend>
+            <label><input type="checkbox" data-key="pdf.toolbar" /> Панель страниц и поворота</label>
+            <label><input type="checkbox" data-key="pdf.navigation" /> Боковая навигация</label>
+            <label><input type="checkbox" data-key="pdf.thumbnails" /> Миниатюры страниц</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Текст и код</legend>
+            <label><input type="checkbox" data-key="text.toolbar" /> Плашка с типом файла и числом строк</label>
+            <label><input type="checkbox" data-key="text.lineNumbers" /> Номера строк</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Другие форматы</legend>
+            <label><input type="checkbox" data-key="image.rotation" /> Изображения: поворот</label>
+            <label><input type="checkbox" data-key="cad.colorMode" /> CAD: переключатель цвета</label>
+            <label><input type="checkbox" data-key="cad.imageExport" /> CAD: снимок PNG/JPEG</label>
+            <label><input type="checkbox" data-key="archive.download" /> Архивы: скачивание файлов</label>
+          </fieldset>
+        </div>
+        <p class="settings-note muted">Настройки применяются сразу и сохраняются в этом браузере.</p>
+      </aside>
 
       <div class="status" id="status">
         <span class="status-dot" id="status-dot" aria-hidden="true"></span>
@@ -37,10 +93,13 @@
         </div>
       </main>
 
-      <footer class="log-wrap">
+      <footer class="log-wrap" id="log-wrap">
         <div class="log-head">
           <span>Журнал событий</span>
-          <button class="btn btn-small" id="btn-log-clear" type="button">Очистить журнал</button>
+          <div class="log-actions">
+            <button class="btn btn-small" id="btn-log-clear" type="button">Очистить журнал</button>
+            <button class="btn btn-small" id="btn-log-hide" type="button">Скрыть</button>
+          </div>
         </div>
         <pre class="log" id="log"></pre>
       </footer>
