@@ -14,7 +14,6 @@ const $ = <T extends HTMLElement>(id: string): T => {
   return el as T
 }
 
-const viewer = $<FileViewerElement>('viewer')
 const fileInput = $<HTMLInputElement>('file-input')
 const dropZone = $<HTMLElement>('drop-zone')
 const placeholder = $<HTMLElement>('placeholder')
@@ -33,8 +32,9 @@ const options: ViewerOptions = {
   search: { enabled: true }
 }
 
-viewer.options = options
-
+// The element is created lazily: when connected without a source it mounts an
+// empty placeholder document and shows its own message on top of our hint.
+let viewer: FileViewerElement | null = null
 let current: File | null = null
 let loadStartedAt = 0
 
@@ -68,22 +68,37 @@ function describeError(error: unknown): string {
   }
 }
 
+function ensureViewer(): FileViewerElement {
+  if (viewer) return viewer
+  const el = document.createElement('flyfish-file-viewer') as FileViewerElement
+  el.className = 'viewer'
+  el.options = options
+  el.addEventListener('viewer-state-change', onStateChange)
+  el.addEventListener('viewer-error', onViewerError)
+  dropZone.appendChild(el)
+  viewer = el
+  return el
+}
+
 function openFile(file: File) {
   current = file
   loadStartedAt = performance.now()
   placeholder.hidden = true
-  viewer.hidden = false
+  const el = ensureViewer()
   btnReload.disabled = false
   btnClear.disabled = false
   setStatus('loading', `Загрузка: ${file.name} (${formatBytes(file.size)})…`)
   appendLog(`Открываю ${file.name} · ${formatBytes(file.size)} · mime=${file.type || 'не определён'}`)
-  viewer.source = { file, filename: file.name, options }
+  el.source = { file, filename: file.name, options }
 }
 
 function clearViewer() {
   current = null
-  viewer.source = undefined
-  viewer.hidden = true
+  if (viewer) {
+    viewer.destroy()
+    viewer.remove()
+    viewer = null
+  }
   placeholder.hidden = false
   btnReload.disabled = true
   btnClear.disabled = true
@@ -97,7 +112,7 @@ fileInput.addEventListener('change', () => {
 })
 
 btnReload.addEventListener('click', () => {
-  if (!current) return
+  if (!current || !viewer) return
   loadStartedAt = performance.now()
   setStatus('loading', `Перезагрузка: ${current.name}…`)
   void viewer.reload()
@@ -127,9 +142,8 @@ dropZone.addEventListener('drop', event => {
 })
 
 // Viewer lifecycle -> status + log.
-viewer.addEventListener('viewer-state-change', event => {
+function onStateChange(event: Event) {
   const { state, event: viewerEvent } = (event as CustomEvent<{ state: ViewerState; event?: ViewerEvent }>).detail
-  // The element mounts an empty placeholder before the first file is chosen; ignore that noise.
   if (!viewerEvent || !current) return
 
   const lifecycle = state.lifecycle
@@ -158,15 +172,15 @@ viewer.addEventListener('viewer-state-change', event => {
     default:
       appendLog(`${viewerEvent.type} ${JSON.stringify(viewerEvent.payload ?? null).slice(0, 200)}`)
   }
-})
+}
 
-viewer.addEventListener('viewer-error', event => {
+function onViewerError(event: Event) {
   if (!current) return
   const { error } = (event as CustomEvent<{ error: unknown }>).detail
   const message = describeError(error)
   setStatus('error', `Ошибка: ${message}`)
-  appendLog(`error ${current?.name ?? ''}: ${message}`, 'err')
+  appendLog(`error ${current.name}: ${message}`, 'err')
   console.error('[file-viewer]', error)
-})
+}
 
 appendLog('Готов. Все рендереры загружаются лениво при открытии файла нужного типа.')
