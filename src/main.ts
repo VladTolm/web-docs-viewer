@@ -5,6 +5,7 @@ import {
   type ViewerState,
   type ViewerEvent
 } from '@file-viewer/web-full'
+import { RU_RU_MESSAGES } from './i18n/ru-RU'
 
 defineFileViewerElement()
 
@@ -29,6 +30,7 @@ const btnSettings = $<HTMLButtonElement>('btn-settings')
 const btnSettingsClose = $<HTMLButtonElement>('btn-settings-close')
 const btnSettingsReset = $<HTMLButtonElement>('btn-settings-reset')
 const settingsPanel = $<HTMLElement>('settings')
+const localeSelect = $<HTMLSelectElement>('viewer-locale')
 
 // ---------------------------------------------------------------------------
 // UI settings: which page elements and which viewer chrome are visible.
@@ -93,15 +95,48 @@ function saveSettings(value: Settings) {
 
 let settings: Settings = loadSettings()
 
+// Viewer UI language. Built-in locales: zh-CN, en-US, ja-JP, de-DE. Russian is
+// not built in: any unknown locale falls back to en-US, and we supply our own
+// catalog through `messages`, which takes priority over the built-in text.
+const LOCALE_STORAGE_KEY = 'web-docs.viewer-locale'
+const VIEWER_LOCALES = ['ru-RU', 'en-US', 'de-DE', 'ja-JP', 'zh-CN'] as const
+type ViewerLocale = (typeof VIEWER_LOCALES)[number]
+const DEFAULT_LOCALE: ViewerLocale = 'ru-RU'
+
+function isViewerLocale(value: string | null): value is ViewerLocale {
+  return VIEWER_LOCALES.includes(value as ViewerLocale)
+}
+
+function loadLocale(): ViewerLocale {
+  try {
+    const raw = localStorage.getItem(LOCALE_STORAGE_KEY)
+    if (isViewerLocale(raw)) return raw
+  } catch {
+    // Ignore blocked storage.
+  }
+  return DEFAULT_LOCALE
+}
+
+function saveLocale(value: ViewerLocale) {
+  try {
+    localStorage.setItem(LOCALE_STORAGE_KEY, value)
+  } catch {
+    // Ignore blocked storage.
+  }
+}
+
+let viewerLocale: ViewerLocale = loadLocale()
+
 const checkboxes = Array.from(
   settingsPanel.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-key]')
 )
 const subGroups = Array.from(settingsPanel.querySelectorAll<HTMLElement>('[data-sub-of]'))
 
-function buildViewerOptions(s: Settings): ViewerOptions {
+function buildViewerOptions(s: Settings, locale: ViewerLocale): ViewerOptions {
   return {
     rendererMode: 'replace',
-    locale: 'en-US',
+    locale,
+    messages: locale === 'ru-RU' ? RU_RU_MESSAGES : undefined,
     theme: 'light',
     toolbar: s['viewer.toolbar']
       ? {
@@ -135,7 +170,7 @@ function buildViewerOptions(s: Settings): ViewerOptions {
   }
 }
 
-let options: ViewerOptions = buildViewerOptions(settings)
+let options: ViewerOptions = buildViewerOptions(settings, viewerLocale)
 
 // The element is created lazily: when connected without a source it mounts an
 // empty placeholder document and shows its own message on top of our hint.
@@ -178,6 +213,7 @@ function describeError(error: unknown): string {
 // ---------------------------------------------------------------------------
 
 function syncCheckboxes() {
+  localeSelect.value = viewerLocale
   for (const box of checkboxes) {
     const key = box.dataset.key
     if (key && isSettingKey(key)) box.checked = settings[key]
@@ -197,10 +233,13 @@ function applyPageSettings() {
 }
 
 function applyViewerSettings(changedKey?: string) {
-  options = buildViewerOptions(settings)
+  options = buildViewerOptions(settings, viewerLocale)
   if (viewer) {
     viewer.options = options
-    if (changedKey) appendLog(`Опции просмотрщика обновлены: ${changedKey} = ${settings[changedKey as SettingKey]}`)
+    if (changedKey) {
+      const value = changedKey === 'locale' ? viewerLocale : settings[changedKey as SettingKey]
+      appendLog(`Опции просмотрщика обновлены: ${changedKey} = ${value}`)
+    }
   }
 }
 
@@ -224,11 +263,20 @@ settingsPanel.addEventListener('change', event => {
   applySettings(key)
 })
 
+localeSelect.addEventListener('change', () => {
+  if (!isViewerLocale(localeSelect.value)) return
+  viewerLocale = localeSelect.value
+  saveLocale(viewerLocale)
+  applySettings('locale')
+})
+
 btnSettings.addEventListener('click', () => openSettings(settingsPanel.hidden))
 btnSettingsClose.addEventListener('click', () => openSettings(false))
 btnSettingsReset.addEventListener('click', () => {
   settings = { ...DEFAULT_SETTINGS }
+  viewerLocale = DEFAULT_LOCALE
   saveSettings(settings)
+  saveLocale(viewerLocale)
   applySettings()
   applyViewerSettings('reset')
 })

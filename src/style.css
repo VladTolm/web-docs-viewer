@@ -189,6 +189,15 @@ html, body { margin: 0; height: 100%; background: var(--bg); }
   cursor: pointer;
 }
 .settings input[type="checkbox"] { margin: 0; accent-color: var(--accent); }
+.settings-select { justify-content: space-between; }
+.settings-select select {
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+}
 .settings .sub { padding-left: 22px; }
 .settings .sub.is-disabled { opacity: 0.45; }
 .settings .sub.is-disabled label { cursor: default; }
